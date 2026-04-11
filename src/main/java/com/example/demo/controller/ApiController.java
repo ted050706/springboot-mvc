@@ -198,6 +198,7 @@ public class ApiController {
 	 *     }
 	 * }
 	 */
+	
 	@GetMapping("/json3/bmi")
 	@ResponseBody
 	/* 同上建立 calcBmi2(h, w) 函式 [實務技巧：設定 (required = false) 可避免少輸入參數時，大跳到工程錯誤頁！]
