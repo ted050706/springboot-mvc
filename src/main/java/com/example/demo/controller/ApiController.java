@@ -1,5 +1,8 @@
 package com.example.demo.controller;
 
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -100,7 +103,6 @@ public class ApiController {
 	 * 
 	 * 執行結果: 身高:170cm 體重:60kg bmi=20.76(正常)
 	*/
-	
 	@GetMapping("/bmi")
 	@ResponseBody
 	/* 建立 bmi(Double h, Double w) 函式，用來取值 & 輸出結果 */
@@ -130,7 +132,6 @@ public class ApiController {
      *   "bmi": 20.76,
 	 * }
 	*/
-	
 	@GetMapping("/json/bmi")
 	@ResponseBody
 	/* 建立 calcBmi(Double h, Double w) 函式
@@ -162,7 +163,6 @@ public class ApiController {
 	 *     }
 	 * }
 	 */
-	
 	@GetMapping("/json2/bmi")
 	@ResponseBody
 	/* 同上建立 calcBmi2(h, w) 函式
@@ -198,45 +198,92 @@ public class ApiController {
 	 *     }
 	 * }
 	 */
-	
 	@GetMapping("/json3/bmi")
 	@ResponseBody
 	/* 同上建立 calcBmi2(h, w) 函式 [實務技巧：設定 (required = false) 可避免少輸入參數時，大跳到工程錯誤頁！]
 	 * 而最外層用 ResponseEntity<> 包裝回傳物件 ApiResponse<BMI>
 	 * 讓我們得以調用 ResponseEntity 的方法來同時回傳狀態碼與資料！ */
 	public ResponseEntity<ApiResponse<BMI>> calcBmi3(@RequestParam (required = false) Double h, 
-			                                         @RequestParam (required = false) Double w){
-		
-		/** 若身高或體重小於等於0，透過 ResponseEntity 回傳 HTTP 400 Bad Request 與 .body() 內的錯誤訊息 */
+			                                         @RequestParam (required = false) Double w)
+	{
+		/** 情況1: 若身高或體重小於等於0，透過 ResponseEntity 回傳 HTTP 400 Bad Request 與 .body() 內的錯誤訊息 */
 		if(h <= 0 || w <= 0) {
 			return ResponseEntity.badRequest().body(
-					/* ApiResponse<BMI> 物件格式為 (message, data) [類別路徑 response/ApiResponse.java] */
+					/* 同範例 5-2: ApiResponse<BMI> 物件格式為 (message, data) [類別路徑 response/ApiResponse.java] */
 				    new ApiResponse<>("錯誤：身高體重必須大於0！", null)
-				    /** 為制式化程式碼，我們也可改呼叫自訂之 .error() 靜態方法來產生錯誤回應 */
+				    /** 為簡化程式碼，我們也可改呼叫自訂之 .error() 靜態方法來產生錯誤回應 */
 //				    ApiResponse.error("錯誤2：身高體重必須大於0！")
 				    );
 		}
-		/** 若身高或體重為 null，提醒要輸入參數 */
+		
+		/** 情況2: 若身高或體重為 null，提醒要輸入參數 */
 		if(h == null || w == null) {
 			return ResponseEntity.badRequest().body( ApiResponse.error("錯誤：請輸入參數！") );
 		}
 		
-		
-		/** 若身高體重正常，則計算 BMI 並回傳 HTTP 200 OK 與 .body() 內的計算結果 */
+		/** 情況3: 若身高體重正常，則計算 BMI 並回傳 HTTP 200 OK 與 .body() 內的計算結果 */
 		// 計算參數並建立 BMI 物件
 		double bmi = w / Math.pow(h/100, 2);
 		BMI bmi_obj = new BMI(h, w, bmi);
 		
 		/* ResponseEntity.ok() 代表回傳 HTTP 200  */
 		return ResponseEntity.ok(
-				/* ApiResponse<BMI> 物件格式為 (message, data) [類別路徑 response/ApiResponse.java] */
+				/* 同範例 5-2: ApiResponse<BMI> 物件格式為 (message, data) [類別路徑 response/ApiResponse.java] */
 				new ApiResponse<BMI>("計算成功~", bmi_obj)
-				/** 為制式化程式碼，我們也可改呼叫自訂之 .success() 靜態方法來產生成功回應 */
+				/** 為簡化程式碼，我們也可改呼叫自訂之 .success() 靜態方法來產生成功回應 */
 //				ApiResponse.success("計算成功2~", bmi_obj)
 				);
 	}
 	
 	
+	
+	/**
+	 * 範例6. 同名參數(age)多筆資料
+	 * 路徑: /json/age?age=17&age=21&age=20
+	 * 網址: http://localhost:8080/api/json/age?age=17&age=21&age=20
+	 * 請計算出平均年齡
+	 * */
+	
+	/* 雖然現今瀏覽器已會自動轉成 JSON
+	 * 此處 produces = "application/json; charset=utf-8" 確保瀏覽器輸出資料為 JSON 格式 */
+	@GetMapping(value = "/json/age", produces = "application/json; charset=utf-8")
+	@ResponseBody
+	/* 類似範例5-3: 為了能調用 ResponseEntity 的方法回傳狀態碼與資料，我們同樣用 ResponseEntity<...> 包裝回傳物件 */
+	/** 因為同名參數會有多筆資料，所以用 List<Integer> ages 來接收
+	 * 例如網址 http://localhost:8080/api/json/age?age=17&age=21&age=20 會將 ages 變成 [17, 21, 20] */
+	public ResponseEntity<ApiResponse<Object>> getAverage(
+	    @RequestParam(name = "age", required = false) List<Integer> ages_list
+	){
+		// 情況1: 若 ages 為 null 或沒有資料，回傳 HTTP 400 Bad Request 與錯誤訊息
+		if(ages_list == null || ages_list.size() == 0) 
+		{
+			return ResponseEntity.badRequest().body( ApiResponse.error("請輸入年齡(age)") );
+		}
+		
+		// 情況2: 若 ages 有資料，則計算平均年齡並回傳 HTTP 200 OK 與計算結果
+		/** 計算平均年齡: 
+		    ages_list.stream(): 把 List 轉成 Stream，方便後續做串流處理。
+		   .mapToInt() 用來把 Stream 中的每個元素轉換成 int 型別，產生一個 IntStream，方便進行數值運算。
+	        其中 Integer::valueOf 是一種方法參考（method reference）
+	        相當於 lambda 表達式 (x) -> Integer.valueOf(x)，用來將 Stream 中的每個元素轉換成 Integer 類型的 int 值。
+	       .average(): 計算 IntStream 的平均值，回傳 OptionalDouble。
+	       .orElseGet( () -> 0 ): 如果沒有平均值（例如 List 為空），則回傳 0 當預設值。 */
+		double avg = ages_list.stream()
+				.mapToInt( Integer::valueOf )
+				.average()
+				.orElseGet( () -> 0 ); 
+		/* 經上式得 avg 為 double 型別。為了輸出小數點後一位，我們用 String.format("%.1f",avg) 來格式化成字串
+		   並用 Map.of() 組成 key-value pair, 例如 data = {"年齡": [17, 21, 20], "平均年齡": "19.3"} */
+		Object data = Map.of(
+				"年齡",ages_list, 
+				"平均年齡",String.format("%.1f",avg)
+				); 
+		
+		return ResponseEntity.ok(ApiResponse.success("計算成功", data));
+	}
+	
+	
+
 	
 	
 	
