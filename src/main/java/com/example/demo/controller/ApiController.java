@@ -202,7 +202,7 @@ public class ApiController {
 	@ResponseBody
 	/* 同上建立 calcBmi2(h, w) 函式 [實務技巧：設定 (required = false) 可避免少輸入參數時，大跳到工程錯誤頁！]
 	 * 而最外層用 ResponseEntity<> 包裝回傳物件 ApiResponse<BMI>
-	 * 讓我們得以調用 ResponseEntity 的方法來同時回傳狀態碼與資料！ */
+	 * 讓我們得以調用 ResponseEntity 的方法來同時回傳 狀態碼與資料！ */
 	public ResponseEntity<ApiResponse<BMI>> calcBmi3(@RequestParam (required = false) Double h, 
 			                                         @RequestParam (required = false) Double w)
 	{
